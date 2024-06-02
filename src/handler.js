@@ -1,8 +1,5 @@
 const getHandler = (req, res) => {
-    console.log('Receive get req here');
-    // insert get handler logic here etc
+    res.send(`This is get request on ${req.url}`).status(200)
 };
 
-module.export = {
-    getHandler
-};
+module.exports = getHandler;
