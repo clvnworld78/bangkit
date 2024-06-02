@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const getHandler = require('../src/handler.js');
+const getRestaurantList = require('../src/handler.js');
 
-router.get('/', (req, res) => {
-    getHandler(req, res);
+router.get('/restaurant', (req, res) => {
+    getRestaurantList(req, res);
 });
 
 module.exports = router;
