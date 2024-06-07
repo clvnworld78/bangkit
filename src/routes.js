@@ -10,4 +10,6 @@ router.get('/', (req, res) => {
     handlers.getHandler(req, res);
 })
 
+router.get('/search', (req, res) => handlers.searchPlaces(req, res));
+
 module.exports = router;
