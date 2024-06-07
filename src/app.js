@@ -1,5 +1,5 @@
 const app = require('express')();
-const customRouter = require('./routes.js');
+const customRouter = require('./routes');
 const dotenv = require('dotenv');
 
 dotenv.config();
