@@ -12,6 +12,6 @@ ENV PORT=3000
 
 ENV API_KEY=AIzaSyDsLZFeu5JsNHJ-gqQHi0W5xXnLfNUFRJ8
 
-EXPOSE ${PORT}
+EXPOSE 3000
 
-CMD [ "npm" "start" ]
+CMD [ "npm", "start" ]
