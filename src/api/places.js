@@ -1,6 +1,6 @@
 require('dotenv').config();
 const axios = require('axios');
-const API_KEY = process.env.TEST_API_KEY;
+const API_KEY = process.env.PLACES_API_KEY;
 
 const searchPlaces = async (location) => {
     const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=restaurants+near+${location}&key=${API_KEY}`;
