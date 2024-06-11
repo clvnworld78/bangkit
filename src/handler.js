@@ -48,7 +48,6 @@ const fetchNearbyRestaurants = async (req, res) => { // req query must contain l
 
 const registration = async (req, res) => { // req body must contain pass and email
     try {
-        console.log(req.body);
         const { email, password, userName, fullName } = req.body;
 
         if (!email || !password || !userName || !fullName) {
