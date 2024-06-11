@@ -1,8 +1,10 @@
-const app = require('express')();
+const express = require('express');
 const customRouter = require('./routes');
 const dotenv = require('dotenv');
+const app = express();
 
 dotenv.config();
+app.use(express.urlencoded({ extended: true }));
 const APP_PORT = process.env.PORT;
 
 app.use('/', customRouter);
