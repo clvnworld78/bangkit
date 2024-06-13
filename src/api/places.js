@@ -12,6 +12,7 @@ const searchPlaces = async (location) => {
         const photoURL = photo? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${API_KEY}` : null;
 
         return {
+            restaurant_id: place_id,
             name: place.name,
             rating: place.rating,
             address: place.formatted_address,
@@ -32,9 +33,10 @@ const fetchNearbyRestaurants = async (location, radius) => {
         const photoURL = photo ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${API_KEY}` : null;
 
         return {
+            id: place.place_id,
             name: place.name,
             rating: place.rating,
-            address: place.vicinity, // Assuming 'vicinity' holds the address
+            address: place.vicinity,
             imageUrl: photoURL,
         };
     });
