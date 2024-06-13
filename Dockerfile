@@ -10,8 +10,6 @@ COPY . .
 
 ENV PORT=3000
 
-ENV API_KEY=xxx
-
 EXPOSE 3000
 
 CMD [ "npm", "start" ]
