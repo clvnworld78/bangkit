@@ -8,5 +8,6 @@ router.get('/nearby', (req, res) => handlers.fetchNearbyRestaurants(req, res));
 
 router.post('/register', (req, res) => handlers.registration(req, res));
 router.post('/login', (req, res) => handlers.login(req, res));
+router.post('/review', (req, res) => handlers.sentimentAnalysis(req, res));
   
 module.exports = router;

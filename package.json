@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/clvnworld78/bangkit/tree/capstone#readme",
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.20.0",
     "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",

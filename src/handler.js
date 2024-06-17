@@ -5,11 +5,20 @@ const api = require('./api/places');
 const db = require('./services/firebase/firestore');
 const bcrypt = require('bcryptjs');
 const generateID = require('./services/function/generateId');
+const tf = require('@tensorflow/tfjs-node');
+const initializeModel = require('./services/model/initializeModel');
+const processReview = require('./services/model/preprocessing');
+const inferencingResult = require('./services/model/inference');
 app.use(express.urlencoded({ extended: true }));
 
 
 const getHandler = (req, res) => {
     console.log(`This is ${req.method} request on ${req.url}`);
+    const model = req.app.get('model');
+    if (!model) {
+        return res.status(500).send({ error: 'Model not initialized' });
+    }
+    // Use the loaded model for prediction or other tasks
     res.status(200).send('Connection to backend successfully established!');
 };
 
@@ -58,6 +67,7 @@ const registration = async (req, res) => { // req body must contain pass and ema
         const usersRef = db.collection('users');
         const emailSnapshot = await usersRef.where('email', '==', email).get();
         const userNameSnapshot = await usersRef.where('username', '==', userName).get();
+        console.log('credential sucessfully loaded');
 
         if (!emailSnapshot.empty) {
             return res.status(400).send('Email already taken');
@@ -132,12 +142,59 @@ const login = async (req, res) => {
     }
 };
 
+const sentimentAnalysis = async (req, res) => {
+    const { reviewText, restaurant_id, restaurant_name, imageUrl } = req.body;
+    // console.log('Received review text:', reviewText);
+
+    if (!reviewText) {
+        return res.status(400).send({ error: 'Review text is required' });
+    }
+    if (!restaurant_id) {
+        return res.status(400).send({ error: 'Restaurant ID is required' });
+    }
+    if (!restaurant_name) {
+        return res.status(400).send({ error: 'Restaurant name is required' });
+    }
+    if (!imageUrl) {
+        return res.status(400).send({ error: 'Image URL is required' });
+    }
+
+    try {
+        const model = await initializeModel();
+
+        // preprocess the data
+        const processedText = await processReview(reviewText, restaurant_id, restaurant_name, imageUrl);
+
+        // converting processed data to tensor
+        const inputIdsTensor = tf.tensor([processedText.input_ids], [1, processedText.input_ids.length], 'int32');
+        const attentionMaskTensor = tf.tensor([processedText.attention_mask], [1, processedText.attention_mask.length], 'int32');
+
+        // prediction
+        const prediction = model.predict({ input_ids: inputIdsTensor, attention_mask: attentionMaskTensor });
+
+        // check prediction result
+        const rawResult = prediction.map(t => Array.from(t.dataSync()));
+        // console.log(rawResult);
+
+        const result = await inferencingResult(rawResult, restaurant_id, restaurant_name, imageUrl);
+        
+        inputIdsTensor.dispose();
+        attentionMaskTensor.dispose();
+
+        return res.send(result);
+    } catch (error) {
+        console.error('error processing the review: ', error);
+        res.status(500).send({ error: 'error processing the review' })
+    }
+}
+
 const handlers = {
     getHandler,
     searchPlaces,
     fetchNearbyRestaurants,
     registration,
-    login
+    login,
+    sentimentAnalysis
 };
 
 module.exports = handlers;
