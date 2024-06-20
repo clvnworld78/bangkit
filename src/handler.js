@@ -9,6 +9,8 @@ const tf = require('@tensorflow/tfjs-node');
 const initializeModel = require('./services/model/initializeModel');
 const processReview = require('./services/model/preprocessing');
 const inferencingResult = require('./services/model/inference');
+const getAverageFunc = require('./services/function/getAverage');
+const getUserRestaurant = require('./services/firebase/getUserRestaurants');
 app.use(express.urlencoded({ extended: true }));
 
 
@@ -86,7 +88,7 @@ const registration = async (req, res) => { // req body must contain pass and ema
             password: hashedPassword,
         });
 
-        res.status(201).send('User registered successfully');
+        res.status(201).json({ "message": "User registered successfully" });
     } catch (error) {
         console.error('Error during registration process [possible connection error ensure the connection is stable]: ', error);
         res.status(500).send({ error: "Registration failed ensure you have a stable connection and try again"});
@@ -143,7 +145,7 @@ const login = async (req, res) => {
 };
 
 const sentimentAnalysis = async (req, res) => {
-    const { reviewText, restaurant_id, restaurant_name, imageUrl } = req.body;
+    const { reviewText, restaurant_id, restaurant_name, imageUrl, address = 'Information not avaialble', username } = req.body;
     // console.log('Received review text:', reviewText);
 
     if (!reviewText) {
@@ -157,6 +159,9 @@ const sentimentAnalysis = async (req, res) => {
     }
     if (!imageUrl) {
         return res.status(400).send({ error: 'Image URL is required' });
+    }
+    if (!username) {
+        return res.status(400).send({ error: 'Username is required' });
     }
 
     try {
@@ -176,10 +181,12 @@ const sentimentAnalysis = async (req, res) => {
         const rawResult = prediction.map(t => Array.from(t.dataSync()));
         // console.log(rawResult);
 
-        const result = await inferencingResult(rawResult, restaurant_id, restaurant_name, imageUrl);
+        const result = await inferencingResult(rawResult, restaurant_id, restaurant_name, imageUrl, address, username, reviewText);
         
         inputIdsTensor.dispose();
         attentionMaskTensor.dispose();
+        prediction.forEach(t => t.dispose());
+        model.dispose();
 
         return res.send(result);
     } catch (error) {
@@ -188,13 +195,73 @@ const sentimentAnalysis = async (req, res) => {
     }
 }
 
+const statistics = async (req, res) => {
+    const { authenticationKey } = req.body;
+
+    if (!authenticationKey) {
+        return res.status(400).send({ error: 'Authentication key is required!' });
+    };
+
+    if (authenticationKey !== 'c74706514d9bb65b3d51501846dbb08784e15d61aa274a54f03c8ab4af953776') {
+        return res.status(401).send({ error: 'Authentication failed' });
+    };
+
+    try {
+        const statistics = await getAverageFunc.getAverage();
+        return res.status(200).send(statistics);
+    } catch (error) {
+        console.error('error getting the data from database: ', error);
+        res.status(500).send({ error: 'error fetching the restaurant list' })
+    };
+};
+
+const getAllUserRestaurant = async (req, res) => {
+    const identifier = req.query.identifier;
+    console.log(identifier);
+
+    if (!identifier) {
+        return res.status(400).send('Idenfier parameter is missing');
+    };
+
+    try {
+        const allUserRestaurants = await getUserRestaurant(identifier);
+        if (allUserRestaurants == []) {
+            return res.status(400).send('User has no review history');
+        };
+
+        return res.status(200).send(allUserRestaurants);
+    } catch (error) {
+        console.error({ error: 'Error during fetching restaurant list from user history'})
+        res.status(500).send({ error: 'error fetching the restaurant list from user history' })
+    };
+};
+
+const getRestaurantDetails = async (req, res) => {
+    const resto_id = req.query.resto_id;
+
+    if (!resto_id) {
+        return res.status(400).send("Missing required parameter: Restaurant ID");
+    }
+
+    try {
+        const details = await getAverageFunc.getDetails(resto_id);
+        return res.status(200).send(details);
+    } catch (error) {
+        console.error({ error: 'Error during firestore fetch or id is not a match'});
+        res.status(400).send({ error: 'Restaurant ID not found' });
+    };
+};
+
 const handlers = {
     getHandler,
     searchPlaces,
     fetchNearbyRestaurants,
     registration,
     login,
-    sentimentAnalysis
+    sentimentAnalysis,
+    statistics,
+    getAllUserRestaurant,
+    getRestaurantDetails
 };
 
 module.exports = handlers;
