@@ -1,6 +1,5 @@
 node_modules
 package-lock.json
 .env
-firebase-admin-sdk.json
-firebase-admin-bucketreader-sdk.json:Zone.Identifier
 firebase-admin-bucketreader-sdk.json
+firebase-admin-bucketreader-sdk.json:Zone.Identifier
