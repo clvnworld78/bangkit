@@ -2,7 +2,7 @@ const db = require('../firebase/firestore');
 const admin = require('firebase-admin');
 const convertSentimentToNumber = require('../function/convertSentimentToNumber');
 
-const inference = async (rawResult, restaurant_id, restaurant_name, imageUrl) => {
+const inference = async (rawResult, restaurant_id, restaurant_name, imageUrl, address, username, reviewText) => {
     const [foodRaw, ambienceRaw, serviceRaw, priceRaw] = rawResult;
 
     const getHighest = (obj) => {
@@ -71,7 +71,7 @@ const inference = async (rawResult, restaurant_id, restaurant_name, imageUrl) =>
         price: highestPrice
     };
 
-    // updating to firestore
+    // updating to firestore for restaurantReview
     const firestoreData = {
         food: convertSentimentToNumber(highestFood.sentiment),
         ambience: convertSentimentToNumber(highestAmbience.sentiment),
@@ -84,6 +84,7 @@ const inference = async (rawResult, restaurant_id, restaurant_name, imageUrl) =>
         id: restaurant_id,
         name: restaurant_name,
         imageUrl: imageUrl,
+        address: address,
         food: [convertSentimentToNumber(highestFood.sentiment)],
         ambience: [convertSentimentToNumber(highestAmbience.sentiment)],
         service: [convertSentimentToNumber(highestService.sentiment)],
@@ -112,6 +113,33 @@ const inference = async (rawResult, restaurant_id, restaurant_name, imageUrl) =>
         await db.collection('restaurantReview').add(firestoreNewEntry);
         console.log('Result is sucessfully added to firestore as new entry!');
     }
+
+    const usersCollectionRef = db.collection('users');
+    const userSnap = await usersCollectionRef.where('username', '==', username).get();
+
+    if (!userSnap.empty) {
+    // User document with matching 'username' field exists
+    const newRestaurantEntry = {
+        id: firestoreNewEntry.id,
+        name: firestoreNewEntry.name,
+        imageUrl: firestoreNewEntry.imageUrl,
+        address: address,
+        review: reviewText
+    };
+
+    const userDocRef = userSnap.docs[0].ref;
+    const userDocSnapshot = await userDocRef.get();
+    const userData = userDocSnapshot.data();
+    const restaurantsArray = userData.restaurants ? [...userData.restaurants, newRestaurantEntry] : [newRestaurantEntry];
+    
+    await userDocRef.update({
+        restaurants: restaurantsArray
+    });
+    console.log('Restaurant entry is successfully updated to existing user!');
+    } else {
+        console.log('No matching user found!');
+    }
+
     
     return result;
 };
